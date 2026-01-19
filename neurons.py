@@ -1,5 +1,8 @@
+import enum
 import random
 import math
+
+LEARNING_RATE = 0.1
 
 class Neuron:
     def __init__(self, neurons_in_previous_layer, index = None, activation_function = "sigmoid") -> None:
@@ -7,17 +10,11 @@ class Neuron:
         self.raw_value = 0
 
         self.activation_function = activation_function
-        self.next_layer = None
         self.index = index
         self.bias = 0
         self.weights = []
         for i in range(neurons_in_previous_layer):
-            #self.weights.append(random.uniform(-(math.sqrt(6)/math.sqrt(neurons_in_previous_layer + neurons_in_next_layer)), math.sqrt(6)/math.sqrt(neurons_in_previous_layer + neurons_in_next_layer)))
             self.weights.append(random.uniform(-1,1))
-            #print(self.weights[i])
-
-    def next_layer_is(self, next_layer):
-        self.next_layer = next_layer
     
     def n_weight(self):
         return len(self.weights)
@@ -32,11 +29,18 @@ class Neuron:
         self.value = value
 
     def derivative(self, x):
-        return x * (1 - x)
+        match self.activation_function:
+            case "sigmoid":
+                return x * (1 - x)
+            case "relu":
+                return 1 if x > 0 else 0
+            case "vanilla":
+                return 1
+            case _:
+                raise Exception("Error in activation function!")
 
     def forward_neuron(self, inputs):
         # Sum of all neurons multiplied by the weights
-        
         sum = 0
         for i in range(len(self.weights)):
             neuron_value = inputs[i]
@@ -44,50 +48,46 @@ class Neuron:
         # Bias addition
         self.raw_value = sum + self.bias
 
-        # Calculation
-        if self.activation_function == "relu":
-            if self.raw_value <= 0:
-                self.value = 0
-            else:
+        # Activation function
+        match self.activation_function:
+            case "sigmoid":
+                self.value = 1/(1 + math.exp(-self.raw_value))
+            case "relu":
+                self.value = max(0, self.raw_value)
+            case "vanilla":
                 self.value = self.raw_value
-        
-        elif self.activation_function == "sigmoid":
-            #print("Sigma yes")
-            sigmoid = 1/(1 + math.exp(-self.raw_value))
-            #sigmoid = 1/(1 + math.e**-self.raw_value)
-            #print(f"Before sigmoid: {value_before_calculation_mechanism} and after Simanoid: {sigmoid}")
-            self.value = sigmoid
-
-        elif self.activation_function == "vanilla":
-            self.value = self.raw_value
-
-        else:
-            print("False activation function!")
+            case _:
+                raise Exception("No valid activation function!")
         return self.value    
         
     # Correct value is the output this neuron should have
     def backpropagation(self, correct_values, previous_layer, next_layer):
         if previous_layer is None:
-            return None
-        learning_rate = 0.1
-
+            return
+        
         gradient = 0
         for i, cor in enumerate(correct_values):
-            if self.next_layer == None:
+            if next_layer == None:
                 gradient += cor * self.derivative(self.value)
             else:
                 gradient += cor * self.derivative(self.value) * next_layer.get_weight(i, self.index)
         
-        self.bias += learning_rate * gradient
+        self.bias += LEARNING_RATE * gradient
         for i in range(len(self.weights)):
             if type(previous_layer) == list:
                 input_neuron_value = previous_layer[i]
             else:
                 input_neuron_value = previous_layer.get_neuron_value(i)
 
-            delta_weight = learning_rate * gradient * input_neuron_value
+            delta_weight = LEARNING_RATE * gradient * input_neuron_value
             self.weights[i] += delta_weight
         
         return gradient
+    
+    def __str__(self):
+        ret_str = ""
+        for i, w in enumerate(self.weights):
+            ret_str += f"\t\tWeight {i}: {w}\n"
+        return ret_str
 
    

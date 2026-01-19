@@ -7,12 +7,7 @@ class Layer:
         self.activation_function = activation_function
         self.neurons = []
         for i in range(neurons_in_current_layer):
-            self.neurons.append(Neuron(self.nipl, index=i))
-
-    def next_layer_is(self, next_layer):
-        self.next_layer = next_layer
-        for neuron in self.neurons:
-            neuron.next_layer_is(next_layer)
+            self.neurons.append(Neuron(self.nipl, index=i, activation_function=self.activation_function))
 
     def n_neuron(self):
         return len(self.neurons)
@@ -56,6 +51,12 @@ class Layer:
             pass_to_next.append(neuron.backpropagation(correct_delta_values, previous_layer=previous_layer, next_layer=next_layer))
 
         return pass_to_next
+    
+    def __str__(self):
+        ret_str = ""
+        for i, n in enumerate(self.neurons):
+            ret_str += f"\tNeuron {i}: {n.value}\n\t\tBias: {n.bias}\n{n}\n"
+        return ret_str
 
 
             

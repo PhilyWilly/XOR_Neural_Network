@@ -1,7 +1,6 @@
 from neural_network import Neural_Network
 from nn_visualisation import Visualise
 import time
-import copy
 
 nn = Neural_Network()
 average_cost = 0
@@ -38,7 +37,7 @@ for ep in range(epoch): # New epoch
     for i, xor_state in enumerate(XOR): # New state in epoch
         action = nn.forward(xor_state) # Calculate how the current nn displays the XOR
 
-        if ep % 10000 == 0: # Display the nn
+        if ep % 1000 == 0: # Display the nn
             visualiser.update(nn)
             time.sleep(0.05)
 
@@ -54,8 +53,10 @@ for ep in range(epoch): # New epoch
             print(f"Old  Epoch: {ep} Avrg cost: {avg_cost:.3f}    Input: {xor_state}    Action: {action}      Cost: {cost}")
 
         nn.backpropagation(xor_correct_list[i]) # Do the backpropagation (here is the part where the algorythm learns (this alg drove me crazy aaaaaaa))
+        
         if ep % 10000 == 0: 
-            time.sleep(2)
+            print(nn)
+            input("Press Enter to continue...")
 
 while True:
     # To keep the neural net displayed

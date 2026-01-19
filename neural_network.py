@@ -6,11 +6,9 @@ class Neural_Network:
     def __init__(self) -> None:
         self.input = []
         self.layer = []
-        self.layer.append(Layer(2, 4, activation_function="sigmoid"))
-        # self.layer.append(Layer(4, 4, activation_function="sigmoid"))
+        self.layer.append(Layer(2, 4, activation_function="relu"))
+        self.layer.append(Layer(4, 4, activation_function="relu"))
         self.layer.append(Layer(4, 1, activation_function="sigmoid"))
-
-        self.layer[0].next_layer_is(self.layer[1])
     
     # For visualisation
     def layer_count(self):
@@ -74,6 +72,15 @@ class Neural_Network:
                 next_layer = self.layer[i+1]
             error = [n for n in self.layer[i].backpropagation(error, next_layer=next_layer, previous_layer=previous_layer)]
             # print(f"{error=}")
+
+    def __str__(self):
+        print("Stringify")
+        ret_str = ""
+        ret_str += f"Input: {self.input}\n"
+        for i, l in enumerate(self.layer):
+            # print(i)
+            ret_str += f"Layer {i}: \n{l}\n"
+        return ret_str 
 
     
 
