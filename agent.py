@@ -13,12 +13,13 @@ XOR = {
     (1,0) : 1,
     (1,1) : 0
 }
-xor_correct_list = [0,1,1,0]
+# xor_correct_list = [[0,1],[1,0],[1,0],[0,1]]
+xor_correct_list = [[0],[1],[1],[0]]
 
-def get_cost(output_list, correct_label):
+def get_cost(output_list, correct_labels):
     cost_in_funtion = 0
-    for output in output_list:
-        cost_in_funtion += pow(output-correct_label, 2)
+    for output, label in zip(output_list, correct_labels):
+        cost_in_funtion += pow(output-label, 2)
     
     return cost_in_funtion
 
@@ -49,13 +50,16 @@ for ep in range(epoch): # New epoch
         else:
             avg_cost = 0.1 * cost + (1-0.1) * avg_cost
 
+
+        if ep % 10000 == 0: 
+            print(nn)
+
+        nn.backpropagation(xor_correct_list[i]) # Do the backpropagation (here is the part where the algorythm learns (this alg drove me crazy aaaaaaa))
         if ep % 10 == 0:
             print(f"Old  Epoch: {ep} Avrg cost: {avg_cost:.3f}    Input: {xor_state}    Action: {action}      Cost: {cost}")
 
-        nn.backpropagation(xor_correct_list[i]) # Do the backpropagation (here is the part where the algorythm learns (this alg drove me crazy aaaaaaa))
         
         if ep % 10000 == 0: 
-            print(nn)
             input("Press Enter to continue...")
 
 while True:

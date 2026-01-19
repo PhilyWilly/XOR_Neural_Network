@@ -34,7 +34,7 @@ class Layer:
             neuron_sum = 0
             #Get the sum of all neurons
             for i in range(len(self.neurons)):
-                self.neurons[i].forward_neuron(inputs)
+                self.neurons[i].forward_neuron(inputs, activation_function=False)
                 neuron_sum += math.e**self.neurons[i].get_value()
             
             # Change the value of each neuron

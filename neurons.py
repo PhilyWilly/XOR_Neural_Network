@@ -28,6 +28,17 @@ class Neuron:
     def set_value(self, value):
         self.value = value
 
+    def activate(self, x):
+        match self.activation_function:
+            case "sigmoid":
+                self.value = 1/(1 + math.exp(-x))
+            case "relu":
+                self.value = max(0, x)
+            case "vanilla":
+                self.value = x
+            case _:
+                raise Exception("No valid activation function!")
+
     def derivative(self, x):
         match self.activation_function:
             case "sigmoid":
@@ -39,7 +50,7 @@ class Neuron:
             case _:
                 raise Exception("Error in activation function!")
 
-    def forward_neuron(self, inputs):
+    def forward_neuron(self, inputs, activation_function=True):
         # Sum of all neurons multiplied by the weights
         sum = 0
         for i in range(len(self.weights)):
@@ -49,15 +60,10 @@ class Neuron:
         self.raw_value = sum + self.bias
 
         # Activation function
-        match self.activation_function:
-            case "sigmoid":
-                self.value = 1/(1 + math.exp(-self.raw_value))
-            case "relu":
-                self.value = max(0, self.raw_value)
-            case "vanilla":
-                self.value = self.raw_value
-            case _:
-                raise Exception("No valid activation function!")
+        if activation_function:
+            self.value = self.activate(self.raw_value)
+        else:
+            self.value = self.raw_value
         return self.value    
         
     # Correct value is the output this neuron should have

@@ -7,8 +7,8 @@ class Neural_Network:
         self.input = []
         self.layer = []
         self.layer.append(Layer(2, 4, activation_function="relu"))
-        self.layer.append(Layer(4, 4, activation_function="relu"))
-        self.layer.append(Layer(4, 1, activation_function="sigmoid"))
+        self.layer.append(Layer(4, 2, activation_function="relu"))
+        self.layer.append(Layer(2, 1, activation_function="sigmoid"))
     
     # For visualisation
     def layer_count(self):
@@ -54,10 +54,11 @@ class Neural_Network:
         return action_list
     
 
-    def backpropagation(self, correct_value):
-        value = self.layer[len(self.layer)-1].get_neuron_value(0)
-        error = correct_value-value
-        error = [error]
+    def backpropagation(self, correct_values):
+        error = []
+        for i, cor_val in enumerate(correct_values):
+            value = self.layer[len(self.layer)-1].get_neuron_value(i)
+            error.append(cor_val-value)
 
         for i in range(len(self.layer)-1, -1, -1):
             # print("Backpropagate layer: " + str(i))
@@ -71,7 +72,7 @@ class Neural_Network:
             if not i > self.layer_count()-2:
                 next_layer = self.layer[i+1]
             error = [n for n in self.layer[i].backpropagation(error, next_layer=next_layer, previous_layer=previous_layer)]
-            # print(f"{error=}")
+            print(f"{error=}")
 
     def __str__(self):
         print("Stringify")
