@@ -131,7 +131,6 @@ class Neural_Network:
                 next_layer=next_layer,
                 previous_layer=previous_layer
             )
-            print(f"{error=}")
 
     def __str__(self):
         result = [f"Input: {self.input}\n"]
