@@ -1,99 +1,101 @@
-import enum
 import random
 import math
 
 LEARNING_RATE = 0.1
 
+
 class Neuron:
-    def __init__(self, neurons_in_previous_layer, index = None, activation_function = "sigmoid") -> None:
+    """A single neuron in a neural network layer."""
+    
+    # Activation function mappings
+    _ACTIVATION_FUNCTIONS = {
+        'sigmoid': lambda x: 1 / (1 + math.exp(-x)),
+        'relu': lambda x: max(0, x),
+        'vanilla': lambda x: x,
+    }
+    
+    _DERIVATIVE_FUNCTIONS = {
+        'sigmoid': lambda x: x * (1 - x),
+        'relu': lambda x: 1 if x > 0 else 0,
+        'vanilla': lambda x: 1,
+    }
+    
+    def __init__(self, neurons_in_previous_layer, index=None, activation_function='sigmoid'):
         self.value = 0
         self.raw_value = 0
-
         self.activation_function = activation_function
         self.index = index
         self.bias = 0
-        self.weights = []
-        for i in range(neurons_in_previous_layer):
-            self.weights.append(random.uniform(-1,1))
+        self.weights = [random.uniform(-1, 1) for _ in range(neurons_in_previous_layer)]
+        
+        if activation_function not in self._ACTIVATION_FUNCTIONS:
+            raise ValueError(f"Invalid activation function: {activation_function}")
     
-    def n_weight(self):
-        return len(self.weights)
-    
-    def get_weight(self, weight):
-        return self.weights[weight]
-    
-    def get_value(self):
-        return self.value
-    
-    def set_value(self, value):
-        self.value = value
-
     def activate(self, x):
-        match self.activation_function:
-            case "sigmoid":
-                self.value = 1/(1 + math.exp(-x))
-            case "relu":
-                self.value = max(0, x)
-            case "vanilla":
-                self.value = x
-            case _:
-                raise Exception("No valid activation function!")
-
+        """Apply activation function to input value."""
+        self.value = self._ACTIVATION_FUNCTIONS[self.activation_function](x)
+    
     def derivative(self, x):
-        match self.activation_function:
-            case "sigmoid":
-                return x * (1 - x)
-            case "relu":
-                return 1 if x > 0 else 0
-            case "vanilla":
-                return 1
-            case _:
-                raise Exception("Error in activation function!")
+        """Calculate derivative of activation function."""
+        return self._DERIVATIVE_FUNCTIONS[self.activation_function](x)
 
-    def forward_neuron(self, inputs, activation_function=True):
-        # Sum of all neurons multiplied by the weights
-        sum = 0
-        for i in range(len(self.weights)):
-            neuron_value = inputs[i]
-            sum += neuron_value*self.weights[i]
-        # Bias addition
-        self.raw_value = sum + self.bias
+    def forward_neuron(self, inputs, apply_activation=True):
+        """
+        Forward pass: compute weighted sum of inputs plus bias.
+        
+        Args:
+            inputs: List of input values from previous layer
+            apply_activation: Whether to apply activation function
+            
+        Returns:
+            Computed neuron value
+        """
+        weighted_sum = sum(inp * weight for inp, weight in zip(inputs, self.weights))
+        self.raw_value = weighted_sum + self.bias
 
-        # Activation function
-        if activation_function:
-            self.value = self.activate(self.raw_value)
+        if apply_activation:
+            self.activate(self.raw_value)
         else:
             self.value = self.raw_value
-        return self.value    
+        return self.value
         
-    # Correct value is the output this neuron should have
     def backpropagation(self, correct_values, previous_layer, next_layer):
+        """
+        Backpropagation: update weights and bias based on error.
+        
+        Args:
+            correct_values: Error values from next layer
+            previous_layer: Previous layer or input values
+            next_layer: Next layer (None for output layer)
+            
+        Returns:
+            Gradient value to pass to previous layer
+        """
         if previous_layer is None:
             return
         
         gradient = 0
-        for i, cor in enumerate(correct_values):
-            if next_layer == None:
-                gradient += cor * self.derivative(self.value)
+        for i, correct_value in enumerate(correct_values):
+            if next_layer is None:
+                gradient += correct_value * self.derivative(self.value)
             else:
-                gradient += cor * self.derivative(self.value) * next_layer.get_weight(i, self.index)
+                gradient += correct_value * self.derivative(self.value) * next_layer.neurons[i].weights[self.index]
         
         self.bias += LEARNING_RATE * gradient
-        for i in range(len(self.weights)):
-            if type(previous_layer) == list:
+        
+        for i, weight in enumerate(self.weights):
+            if isinstance(previous_layer, list):
                 input_neuron_value = previous_layer[i]
             else:
-                input_neuron_value = previous_layer.get_neuron_value(i)
-
+                input_neuron_value = previous_layer.neurons[i].value
+            
             delta_weight = LEARNING_RATE * gradient * input_neuron_value
             self.weights[i] += delta_weight
         
         return gradient
     
     def __str__(self):
-        ret_str = ""
-        for i, w in enumerate(self.weights):
-            ret_str += f"\t\tWeight {i}: {w}\n"
-        return ret_str
+        weight_strings = [f"\t\tWeight {i}: {w}\n" for i, w in enumerate(self.weights)]
+        return ''.join(weight_strings)
 
    

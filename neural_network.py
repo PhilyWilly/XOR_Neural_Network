@@ -1,92 +1,149 @@
-from re import S
 from layer import Layer
 
 
 class Neural_Network:
-    def __init__(self) -> None:
+    """XOR Neural Network implementation."""
+    
+    def __init__(self):
         self.input = []
-        self.layer = []
-        self.layer.append(Layer(2, 4, activation_function="relu"))
-        self.layer.append(Layer(4, 2, activation_function="relu"))
-        self.layer.append(Layer(2, 1, activation_function="sigmoid"))
+        self.layers = [
+            Layer(2, 4, activation_function='relu'),
+            Layer(4, 2, activation_function='relu'),
+            Layer(2, 1, activation_function='sigmoid')
+        ]
     
-    # For visualisation
+    @property
     def layer_count(self):
-        return len(self.layer)
+        """Return the number of layers."""
+        return len(self.layers)
     
-    def n_neuron(self, layer):
-        if layer == 0:
-            return len(self.input)
-        return self.layer[layer-1].n_neuron()
-    
-    def previous_n_neuron(self, layer, neuron):
-        if layer == 0:
-            return None
-        return self.layer[layer-1].previous_neuron_count(neuron)
-    
-    def get_weight(self, layer, neuron, weight):
-        if layer == 0:
-            return None
-        return self.layer[layer-1].get_weight(neuron, weight)
-    
-    def get_neuron_value(self, layer, neuron):
-        if layer == 0:
-            return self.input[neuron]
-        return self.layer[layer-1].get_neuron_value(neuron)
-    
-    def get_input(self):
-        return self.input
-    
-    # For Tensor calculations
-    def forward(self, input):
-        self.input = [n for n in input]
-        current_neuron_list = input
+    def get_neuron_count(self, layer_index):
+        """
+        Get number of neurons in a specific layer.
         
-        for layer in self.layer:
-            current_neuron_list = [n for n in layer.forward_layer(current_neuron_list)]
-        return current_neuron_list
+        Args:
+            layer_index: Layer index (0 is input layer)
+            
+        Returns:
+            Number of neurons in the layer
+        """
+        if layer_index == 0:
+            return len(self.input)
+        return len(self.layers[layer_index - 1].neurons)
+    
+    def get_previous_neuron_count(self, layer_index, neuron_index):
+        """
+        Get number of weights for a specific neuron.
+        
+        Args:
+            layer_index: Layer index
+            neuron_index: Neuron index within the layer
+            
+        Returns:
+            Number of weights (previous layer neurons)
+        """
+        if layer_index == 0:
+            return None
+        return len(self.layers[layer_index - 1].neurons[neuron_index].weights)
+    
+    def get_weight(self, layer_index, neuron_index, weight_index):
+        """
+        Get a specific weight value.
+        
+        Args:
+            layer_index: Layer index
+            neuron_index: Neuron index within the layer
+            weight_index: Weight index within the neuron
+            
+        Returns:
+            Weight value or None for input layer
+        """
+        if layer_index == 0:
+            return None
+        return self.layers[layer_index - 1].neurons[neuron_index].weights[weight_index]
+    
+    def get_neuron_value(self, layer_index, neuron_index):
+        """
+        Get a specific neuron's value.
+        
+        Args:
+            layer_index: Layer index (0 is input layer)
+            neuron_index: Neuron index within the layer
+            
+        Returns:
+            Neuron value
+        """
+        if layer_index == 0:
+            return self.input[neuron_index]
+        return self.layers[layer_index - 1].neurons[neuron_index].value
+    
+    def forward(self, input_data):
+        """
+        Forward pass through the network.
+        
+        Args:
+            input_data: Input values for the network
+            
+        Returns:
+            Output values from the final layer
+        """
+        self.input = list(input_data)
+        current_values = self.input
+        
+        for layer in self.layers:
+            current_values = layer.forward_layer(current_values)
+        return current_values
 
     def get_action(self):
-        action_list = []
-        output_layer_index = len(self.layer)-1
-        for neuron in range(self.n_neuron(output_layer_index)):
-            action_list.append(self.get_neuron_value(output_layer_index, neuron))
-        return action_list
-    
+        """
+        Get output values from the network.
+        
+        Returns:
+            List of output values from final layer
+        """
+        output_layer_index = len(self.layers)
+        return [
+            self.get_neuron_value(output_layer_index, neuron_idx)
+            for neuron_idx in range(self.get_neuron_count(output_layer_index))
+        ]
 
     def backpropagation(self, correct_values):
-        error = []
-        for i, cor_val in enumerate(correct_values):
-            value = self.layer[len(self.layer)-1].get_neuron_value(i)
-            error.append(cor_val-value)
+        """
+        Backpropagation to update weights and biases.
+        
+        Args:
+            correct_values: Expected output values
+        """
+        # Calculate error for output layer
+        output_layer = self.layers[-1]
+        error = [
+            correct_val - neuron.value
+            for correct_val, neuron in zip(correct_values, output_layer.neurons)
+        ]
 
-        for i in range(len(self.layer)-1, -1, -1):
-            # print("Backpropagate layer: " + str(i))
-            previous_layer = None
-            if i != 0:
-                previous_layer = self.layer[i-1]
-            else:
-                previous_layer = self.input
-
-            next_layer = None
-            if not i > self.layer_count()-2:
-                next_layer = self.layer[i+1]
-            error = [n for n in self.layer[i].backpropagation(error, next_layer=next_layer, previous_layer=previous_layer)]
+        # Backpropagate through all layers in reverse order
+        for i in range(len(self.layers) - 1, -1, -1):
+            previous_layer = self.layers[i - 1] if i > 0 else self.input
+            next_layer = self.layers[i + 1] if i < len(self.layers) - 1 else None
+            
+            error = self.layers[i].backpropagation(
+                error,
+                next_layer=next_layer,
+                previous_layer=previous_layer
+            )
             print(f"{error=}")
 
     def __str__(self):
-        print("Stringify")
-        ret_str = ""
-        ret_str += f"Input: {self.input}\n"
-        for i, l in enumerate(self.layer):
-            # print(i)
-            ret_str += f"Layer {i}: \n{l}\n"
-        return ret_str 
-
-    
+        result = [f"Input: {self.input}\n"]
+        result.extend(
+            f"Layer {i}: \n{layer}\n"
+            for i, layer in enumerate(self.layers)
+        )
+        return ''.join(result)
 
 
 def run():
+    """Main function to create and initialize the neural network."""
     nn = Neural_Network()
 
 
