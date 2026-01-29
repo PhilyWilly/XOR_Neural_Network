@@ -41,7 +41,7 @@ def main():
     
     # Initialize neural network with one forward pass for visualization
     nn.forward((0, 0))
-    visualizer = Visualise(nn)
+    visualiser = Visualise(nn)
     
     avg_cost = None
     
@@ -52,7 +52,7 @@ def main():
             
             # Update visualization periodically
             if epoch % DISPLAY_INTERVAL == 0:
-                visualizer.update(nn)
+                visualiser.update(nn)
                 time.sleep(0.05)
             
             # Calculate cost
@@ -86,7 +86,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
 
 
 

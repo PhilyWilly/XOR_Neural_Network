@@ -68,5 +68,3 @@ class Layer:
         ]
         return ''.join(neuron_strings)
 
-
-            

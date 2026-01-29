@@ -21,15 +21,16 @@ class Neuron:
     }
     
     def __init__(self, neurons_in_previous_layer, index=None, activation_function='sigmoid'):
+        # Validate activation function first
+        if activation_function not in self._ACTIVATION_FUNCTIONS:
+            raise ValueError(f"Invalid activation function: {activation_function}")
+        
         self.value = 0
         self.raw_value = 0
         self.activation_function = activation_function
         self.index = index
         self.bias = 0
         self.weights = [random.uniform(-1, 1) for _ in range(neurons_in_previous_layer)]
-        
-        if activation_function not in self._ACTIVATION_FUNCTIONS:
-            raise ValueError(f"Invalid activation function: {activation_function}")
     
     def activate(self, x):
         """Apply activation function to input value."""
@@ -98,4 +99,3 @@ class Neuron:
         weight_strings = [f"\t\tWeight {i}: {w}\n" for i, w in enumerate(self.weights)]
         return ''.join(weight_strings)
 
-   

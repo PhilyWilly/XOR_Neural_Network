@@ -80,7 +80,8 @@ class Visualise:
 
         for layer_idx in range(len(self.lines)):
             for neuron_idx in range(len(self.lines[layer_idx])):
-                # Set circle color based on neuron value
+                # Set circle color: inverted neuron value for visualization
+                # (higher values = darker, lower values = lighter)
                 neuron_value = self.neural_net.get_neuron_value(layer_idx, neuron_idx)
                 neuron_value = max(0, min(1.0, neuron_value))
                 neuron_value = 1 - neuron_value
@@ -117,10 +118,5 @@ class Visualise:
         blue = 0
 
         return f'#{red:02X}{green:02X}{blue:02X}'
-    
-
-
-
-        
 
     
