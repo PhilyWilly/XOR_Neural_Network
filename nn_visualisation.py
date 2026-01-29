@@ -4,103 +4,119 @@ from IPython import display
 
 
 class Visualise:
-    def __init__(self, neural_net) -> None:
+    """Visualize the neural network structure and weights."""
+    
+    def __init__(self, neural_net):
         plt.figure()
         display.clear_output(wait=True)
         display.display(plt.gcf())
         
         self.neural_net = neural_net
-
-        n_layer = self.neural_net.layer_count()+1
+        num_layers = neural_net.layer_count + 1
         
-        self.line = []
+        self.lines = []
         # Draw weights
-        for layer in range(n_layer):
-            self.line.append([])
-            n_neurons = n_neurons = self.neural_net.n_neuron(layer)
-            if layer == 0:
-                for neuron in range(n_neurons):
-                    self.line[layer].append([])
+        for layer_idx in range(num_layers):
+            self.lines.append([])
+            num_neurons = neural_net.get_neuron_count(layer_idx)
+            
+            if layer_idx == 0:
+                for _ in range(num_neurons):
+                    self.lines[layer_idx].append([])
                 continue
-            prev_n_neurons = self.neural_net.n_neuron(layer-1)
+            
+            prev_num_neurons = neural_net.get_neuron_count(layer_idx - 1)
 
-            for neuron in range(n_neurons):
-                self.line[layer].append([])
+            for neuron_idx in range(num_neurons):
+                self.lines[layer_idx].append([])
                 
-                neuron_x = layer/n_layer*700
-                prev_neuron_x = (layer-1)/n_layer*700
-                neuron_y = 400 - (neuron/n_neurons*400+400/n_neurons/2)
-                for weight in range(self.neural_net.previous_n_neuron(layer,neuron)):                 
-                    self.line[layer][neuron].append(plt.Line2D((neuron_x, prev_neuron_x), (neuron_y, 400 - (weight/prev_n_neurons*400+400/prev_n_neurons/2)), zorder=1))
-                    plt.gca().add_line(self.line[layer][neuron][weight])
-
+                neuron_x = layer_idx / num_layers * 700
+                prev_neuron_x = (layer_idx - 1) / num_layers * 700
+                neuron_y = 400 - (neuron_idx / num_neurons * 400 + 400 / num_neurons / 2)
+                
+                for weight_idx in range(neural_net.get_previous_neuron_count(layer_idx, neuron_idx)):
+                    prev_neuron_y = 400 - (weight_idx / prev_num_neurons * 400 + 400 / prev_num_neurons / 2)
+                    line = plt.Line2D(
+                        (neuron_x, prev_neuron_x),
+                        (neuron_y, prev_neuron_y),
+                        zorder=1
+                    )
+                    self.lines[layer_idx][neuron_idx].append(line)
+                    plt.gca().add_line(line)
         
-        self.circle = []
+        self.circles = []
         # Draw neurons
-        for layer in range(n_layer):
-            self.circle.append([])
-            if layer == 0:
-                input = self.neural_net.get_input()
-                n_neurons = len(input)
-                for neuron in range(n_neurons):
-                    self.circle[layer].append(plt.Circle((layer/n_layer*700, 400 - (neuron/n_neurons*400+400/n_neurons/2)), radius=16, fill=True, zorder=2,linewidth=1, facecolor='w', edgecolor='k'))
-                    plt.gca().add_patch(self.circle[layer][neuron])
-            else:
-                n_neurons = self.neural_net.n_neuron(layer)
-                for neuron in range(n_neurons):
-                    self.circle[layer].append(plt.Circle((layer/n_layer*700, 400 - (neuron/n_neurons*400+400/n_neurons/2)), radius=16, fill=True, zorder=2,linewidth=1, facecolor='w', edgecolor='k'))
-                    plt.gca().add_patch(self.circle[layer][neuron])
-        
+        for layer_idx in range(num_layers):
+            self.circles.append([])
+            num_neurons = neural_net.get_neuron_count(layer_idx)
+            
+            for neuron_idx in range(num_neurons):
+                x_pos = layer_idx / num_layers * 700
+                y_pos = 400 - (neuron_idx / num_neurons * 400 + 400 / num_neurons / 2)
+                circle = plt.Circle(
+                    (x_pos, y_pos),
+                    radius=16,
+                    fill=True,
+                    zorder=2,
+                    linewidth=1,
+                    facecolor='w',
+                    edgecolor='k'
+                )
+                self.circles[layer_idx].append(circle)
+                plt.gca().add_patch(circle)
 
         plt.axis('scaled')
         plt.axis('off')
         plt.title('Neural network', fontsize=15)
-        #self.update(self.neural_net)
-        
     
     def update(self, neural_network):
+        """
+        Update the visualization with current network state.
+        
+        Args:
+            neural_network: Neural network to visualize
+        """
         self.neural_net = neural_network
 
-        for layer in range(len(self.line)):
-            for neuron in range(len(self.line[layer])):
-                # Set circle color according to the value in that neuron
-                
-                neuron_value = self.neural_net.get_neuron_value(layer, neuron)
+        for layer_idx in range(len(self.lines)):
+            for neuron_idx in range(len(self.lines[layer_idx])):
+                # Set circle color: inverted neuron value for visualization
+                # (higher values = darker, lower values = lighter)
+                neuron_value = self.neural_net.get_neuron_value(layer_idx, neuron_idx)
                 neuron_value = max(0, min(1.0, neuron_value))
-                neuron_value = -neuron_value + 1
-                neuron_value = int(255*neuron_value)
-                color_neuron = f'#{(neuron_value):02X}{255:02X}{(neuron_value):02X}'
+                neuron_value = 1 - neuron_value
+                neuron_value = int(255 * neuron_value)
+                color_neuron = f'#{neuron_value:02X}{255:02X}{neuron_value:02X}'
                 
-                self.circle[layer][neuron].set_facecolor(color_neuron)
+                self.circles[layer_idx][neuron_idx].set_facecolor(color_neuron)
                 
-                for weight in range(len(self.line[layer][neuron])):
-                    value = self.neural_net.get_weight(layer, neuron, weight)
-                    color = self.interpolate_color(value)
-                    self.line[layer][neuron][weight].set_color(color)
+                # Update weight line colors
+                for weight_idx in range(len(self.lines[layer_idx][neuron_idx])):
+                    weight_value = self.neural_net.get_weight(layer_idx, neuron_idx, weight_idx)
+                    color = self._interpolate_color(weight_value)
+                    self.lines[layer_idx][neuron_idx][weight_idx].set_color(color)
         
         plt.show(block=False)
         plt.pause(0.1)
-        
 
-    def interpolate_color(self, value):
-        # Ensure value is clamped between -1.0 and 1.0
+    def _interpolate_color(self, value):
+        """
+        Interpolate color based on weight value.
+        
+        Args:
+            value: Weight value (between -1 and 1)
+            
+        Returns:
+            Hex color string
+        """
+        # Clamp value between -1.0 and 1.0
         value = max(-1.0, min(1.0, value))
 
-        # Normalize value to the range [0, 1] for easier interpolation
-        green = 0
-        red = 0
-        if value > 0:
-            green = int(255 * value)
-        else:
-            red = int(-255 * value)
-        blue = 0  # Constant for both colors
+        # Calculate color components (positive=green, negative=red)
+        red = int(-255 * value) if value < 0 else 0
+        green = int(255 * value) if value > 0 else 0
+        blue = 0
 
-        # Return the interpolated color in hex format
         return f'#{red:02X}{green:02X}{blue:02X}'
-    
-
-
-
-        
 
     

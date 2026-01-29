@@ -1,62 +1,70 @@
 from neurons import Neuron
 import math
 
-class Layer:
-    def __init__(self, neurons_in_previous_layer, neurons_in_current_layer, activation_function = "sigmoid") -> None:
-        self.nipl = neurons_in_previous_layer
-        self.activation_function = activation_function
-        self.neurons = []
-        for i in range(neurons_in_current_layer):
-            self.neurons.append(Neuron(self.nipl, index=i, activation_function=self.activation_function))
 
-    def n_neuron(self):
-        return len(self.neurons)
+class Layer:
+    """A layer of neurons in a neural network."""
     
-    def previous_neuron_count(self, neuron):
-        return self.neurons[neuron].n_weight()
-    
-    def get_weight(self, neuron, weight):
-        return self.neurons[neuron].get_weight(weight)
-    
-    def get_neuron_value(self, neuron):
-        return self.neurons[neuron].get_value()
-    
-    # Calculate solution
-    def set_neuron_value(self, neuron_index, value):
-        self.neurons[neuron_index].set_value(value)
+    def __init__(self, neurons_in_previous_layer, neurons_in_current_layer, activation_function='sigmoid'):
+        self.neurons_in_prev_layer = neurons_in_previous_layer
+        self.activation_function = activation_function
+        self.neurons = [
+            Neuron(self.neurons_in_prev_layer, index=i, activation_function=self.activation_function)
+            for i in range(neurons_in_current_layer)
+        ]
 
     def forward_layer(self, inputs):
-        if self.activation_function != "soft-max":
+        """
+        Forward pass through the layer.
+        
+        Args:
+            inputs: Input values from previous layer
+            
+        Returns:
+            List of output values from this layer
+        """
+        if self.activation_function != 'soft-max':
             return [neuron.forward_neuron(inputs) for neuron in self.neurons]
-            
-        else:
-            # Soft-max algorhythm
-            neuron_sum = 0
-            #Get the sum of all neurons
-            for i in range(len(self.neurons)):
-                self.neurons[i].forward_neuron(inputs, activation_function=False)
-                neuron_sum += math.e**self.neurons[i].get_value()
-            
-            # Change the value of each neuron
-            for i in range(len(self.neurons)):
-                neuron_value_before = math.e**self.neurons[i].get_value()
-                new_neuron_value = neuron_value_before/neuron_sum
-                #print(f"The sum is {neuron_sum}, the previous value was {neuron_value_before} and the new neuron value is {new_neuron_value}")
-                self.neurons[i].set_value(new_neuron_value)
-            
-    # The Neuron addition from pprebvious lkawodjioaddaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-    def backpropagation(self, correct_delta_values, next_layer=None, previous_layer=None):
-        pass_to_next = []
+        
+        # Softmax activation
         for neuron in self.neurons:
-            pass_to_next.append(neuron.backpropagation(correct_delta_values, previous_layer=previous_layer, next_layer=next_layer))
-
-        return pass_to_next
+            neuron.forward_neuron(inputs, apply_activation=False)
+        
+        # Calculate exponentials and sum
+        exp_values = [math.exp(neuron.value) for neuron in self.neurons]
+        exp_sum = sum(exp_values)
+        
+        # Normalize by the sum to get softmax output
+        for neuron, exp_value in zip(self.neurons, exp_values):
+            neuron.value = exp_value / exp_sum
+            
+        return [neuron.value for neuron in self.neurons]
+            
+    def backpropagation(self, correct_delta_values, next_layer=None, previous_layer=None):
+        """
+        Backpropagation through the layer.
+        
+        Args:
+            correct_delta_values: Error values from next layer
+            next_layer: Next layer (None for output layer)
+            previous_layer: Previous layer or input values
+            
+        Returns:
+            Gradient values to pass to previous layer
+        """
+        return [
+            neuron.backpropagation(
+                correct_delta_values, 
+                previous_layer=previous_layer, 
+                next_layer=next_layer
+            )
+            for neuron in self.neurons
+        ]
     
     def __str__(self):
-        ret_str = ""
-        for i, n in enumerate(self.neurons):
-            ret_str += f"\tNeuron {i}: {n.value}\n\t\tBias: {n.bias}\n{n}\n"
-        return ret_str
+        neuron_strings = [
+            f"\tNeuron {i}: {neuron.value}\n\t\tBias: {neuron.bias}\n{neuron}\n"
+            for i, neuron in enumerate(self.neurons)
+        ]
+        return ''.join(neuron_strings)
 
-
-            
