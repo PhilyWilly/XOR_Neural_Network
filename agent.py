@@ -52,7 +52,8 @@ for ep in range(epoch): # New epoch
 
 
         if ep % 10000 == 0: 
-            print(nn)
+            # print(nn)
+            pass
 
         nn.backpropagation(xor_correct_list[i]) # Do the backpropagation (here is the part where the algorythm learns (this alg drove me crazy aaaaaaa))
         if ep % 10 == 0:

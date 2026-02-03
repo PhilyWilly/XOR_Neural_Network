@@ -31,11 +31,11 @@ class Neuron:
     def activate(self, x):
         match self.activation_function:
             case "sigmoid":
-                self.value = 1/(1 + math.exp(-x))
+                return 1/(1 + math.exp(-x))
             case "relu":
-                self.value = max(0, x)
+                return max(0, x)
             case "vanilla":
-                self.value = x
+                return x
             case _:
                 raise Exception("No valid activation function!")
 
